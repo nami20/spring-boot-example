@@ -2,11 +2,21 @@ package net.gradle.com.springbootexpample.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.*;
 import java.util.Optional;
 
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import com.aerospike.client.AerospikeClient;
+import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.Bin;
+import com.aerospike.client.Key;
+import com.aerospike.client.Record;
+import com.aerospike.client.Value;
+
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,17 +32,46 @@ import net.gradle.com.springbootexpample.repository.EmployeeRepository;
 @RestController
 @RequestMapping("/api/v1")
 public class EmployeeController {
-
     @Autowired
     private EmployeeRepository employeeRepository;
+    AerospikeClient asdClient = new AerospikeClient("172.28.128.3", 3000);
+    WritePolicy policy = new WritePolicy();
+    Key key = new Key("test", "myset", "employee");
 
     @GetMapping("/employees")
     public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
+        List<Employee> list = new ArrayList<>();
+        Record record = asdClient.get(policy, key);
+        Employee employee1 = new Employee();
+        if(!record.getString("lastName").isEmpty()) {
+            employee1.setId(record.getInt("id"));
+            employee1.setEmailId(record.getString("lastName"));
+            employee1.setLastName(record.getString("firstName"));
+            employee1.setFirstName(record.getString("emailId"));
+            list.add(employee1);
+            return list;
+        } else {
+            return employeeRepository.findAll();
+        }
     }
 
     @PostMapping("/employee")
     public Employee createEmployee(@Valid @RequestBody Employee employee) {
+        Record record = asdClient.get(policy, key);
+        System.out.println(record);
+        Bin Id = new Bin("id", employee.getId());
+        Bin lastName = new Bin("lastName", employee.getLastName());
+        Bin firstName = new Bin("firstName", employee.getFirstName());
+        Bin emailId = new Bin("emailId", employee.getEmailId());
+        if(!record.getString("lastName").isEmpty()) {
+            asdClient.put(policy, key, lastName, firstName, emailId);
+            System.out.println('q');
+            System.out.println(asdClient.get(policy, key));
+        } else  {
+            System.out.println('c');
+            asdClient.put(policy, key, lastName, firstName, emailId);
+            System.out.println(asdClient.get(policy, key));
+        }
         return employeeRepository.save(employee);
     }
 
