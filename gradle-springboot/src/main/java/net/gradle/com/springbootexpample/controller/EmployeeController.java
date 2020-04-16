@@ -36,43 +36,47 @@ public class EmployeeController {
     private EmployeeRepository employeeRepository;
     AerospikeClient asdClient = new AerospikeClient("172.28.128.3", 3000);
     WritePolicy policy = new WritePolicy();
-    Key key = new Key("test", "myset", "employee");
 
     @GetMapping("/employees")
     public List<Employee> getAllEmployees() {
-        List<Employee> list = new ArrayList<>();
-        Record record = asdClient.get(policy, key);
-        Employee employee1 = new Employee();
-        if(!record.getString("lastName").isEmpty()) {
-            employee1.setId(record.getInt("id"));
-            employee1.setEmailId(record.getString("lastName"));
-            employee1.setLastName(record.getString("firstName"));
-            employee1.setFirstName(record.getString("emailId"));
-            list.add(employee1);
-            return list;
-        } else {
-            return employeeRepository.findAll();
-        }
+        return employeeRepository.findAll();
     }
 
     @PostMapping("/employee")
     public Employee createEmployee(@Valid @RequestBody Employee employee) {
+        Employee employee1 = employeeRepository.save(employee);
+        setASDClientEmployee(employee1);
+        return employee1;
+    }
+
+    @GetMapping("/employee/{id}")
+    public Employee getEmployeeById(@PathVariable(value = "id") Long employeeId) {
+        Key key = new Key("test", "employee", employeeId);
         Record record = asdClient.get(policy, key);
-        System.out.println(record);
+        Employee employee1 = new Employee();
+        System.out.println(asdClient.get(policy, key));
+        if(record!= null && record.getInt("id")!= 0) {
+            employee1.setId(record.getInt("id"));
+            employee1.setEmailId(record.getString("lastName"));
+            employee1.setLastName(record.getString("firstName"));
+            employee1.setFirstName(record.getString("emailId"));
+            return employee1;
+        } else {
+            Optional<Employee> employee = employeeRepository.findById(employeeId);
+            Employee employeeDetails = employee.get();
+            setASDClientEmployee(employeeDetails);
+            return employeeDetails;
+        }
+    }
+
+    private void setASDClientEmployee(Employee employee) {
+        Key key = new Key("test", "employee", employee.getId());
         Bin Id = new Bin("id", employee.getId());
         Bin lastName = new Bin("lastName", employee.getLastName());
         Bin firstName = new Bin("firstName", employee.getFirstName());
         Bin emailId = new Bin("emailId", employee.getEmailId());
-        if(!record.getString("lastName").isEmpty()) {
-            asdClient.put(policy, key, lastName, firstName, emailId);
-            System.out.println('q');
-            System.out.println(asdClient.get(policy, key));
-        } else  {
-            System.out.println('c');
-            asdClient.put(policy, key, lastName, firstName, emailId);
-            System.out.println(asdClient.get(policy, key));
-        }
-        return employeeRepository.save(employee);
+        asdClient.put(policy, key, Id, lastName, firstName, emailId);
+        System.out.println(asdClient.get(policy, key));
     }
 
     @PutMapping("/employee/{id}")
@@ -80,16 +84,21 @@ public class EmployeeController {
                                                    @Valid @RequestBody Employee employeeDetails){
         Optional<Employee> employee = employeeRepository.findById(employeeId);
         Employee employee1 = employee.get();
-//        Employee employee = employeeRepository.findById(employeeId);
         employee1.setEmailId(employeeDetails.getEmailId());
         employee1.setLastName(employeeDetails.getLastName());
         employee1.setFirstName(employeeDetails.getFirstName());
+        setASDClientEmployee(employee1);
         final Employee updatedEmployee = employeeRepository.save(employee1);
         return ResponseEntity.ok(updatedEmployee);
     }
 
     @DeleteMapping("/employee/{id}")
     public Map<String, Boolean> deleteEmployee(@PathVariable(value = "id") Long employeeId) {
+        Key key = new Key("test", "employee", employeeId);
+        Record record = asdClient.get(policy, key);
+        if(record!= null && record.getInt("id") != 0) {
+            asdClient.delete(policy, key);
+        }
         Optional<Employee> employee = employeeRepository.findById(employeeId);
         Employee employee1 = employee.get();
         employeeRepository.delete(employee1);
