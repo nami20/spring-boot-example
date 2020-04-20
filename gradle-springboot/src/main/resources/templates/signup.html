@@ -1,0 +1,62 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns="http://www.w3.org/1999/xhtml"
+>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0"/>
+<!--    <link rel="stylesheet" type="text/css" media="all" href="css/Base.css" th:href="@{/resources/css/Base.css}"/>-->
+<!--    <link rel="stylesheet" type="text/css" media="all" href="css/Component.css"-->
+<!--          th:href="@{/resources/css/Component.css}"/>-->
+<!--    <link rel="stylesheet" type="text/css" media="all" href="css/Component.css"-->
+<!--          th:href="@{/resources/font_awesome/css/font-awesome.min.css}"/>-->
+<!--    <script src="/webjars/jquery/3.2.1/jquery.min.js"></script>-->
+<!--    <script src='https://www.google.com/recaptcha/api.js'></script>-->
+<!--    <script th:src="@{/resources/js/Valid.js}"></script>-->
+<!--    <title th:text="#{label.form.title}">form</title>-->
+</head>
+<body class="bg-cyan">
+<div class="body body-s">
+
+    <form autocomplete="off" th:action="@{/signup}"
+          th:object="${user}" method="post"
+          role="form" class="sky-form" enctype="utf8">
+        <header>Registration form</header>
+        <fieldset>
+            <section>
+                <label class="input">
+                    <i class="icon-append icon-user"></i>
+                    <input th:field="*{username}" type="text" placeholder="First Name"/>
+                </label>
+            </section>
+            <section><p th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></p></section>
+            <section>
+                <label class="input">
+                    <i class="icon-append icon-lock"></i>
+                    <input type="text" style="display:none;"/>
+                    <input autocomplete="false" id="password" name="password" th:field="*{password}" type="password"
+                           placeholder="Password"/>
+                </label>
+            </section>
+            <section>
+                <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></p></section>
+            <section>
+                <label class="input">
+                    <i class="icon-append icon-lock"></i>
+                    <input type="text" style="display:none;"/>
+                    <input autocomplete="false" id="passwordConfirm" name="passwordConfirm" type="password"
+                           th:field="*{passwordConfirm}"
+                           placeholder="Matching Password"/>
+                </label>
+            </section>
+            <section><p th:if="${#fields.hasErrors('passwordConfirm')}" th:errors="*{passwordConfirm}"></p>
+            </section>
+        </fieldset>
+        <footer>
+            <button id="btn-signup" type="submit" class="button">Sign Up</button>
+        </footer>
+
+    </form>
+</div>
+</body>
+
+</html>

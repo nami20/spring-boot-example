@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.*;
 import java.util.Optional;
+import java.util.Collection;
 
 import javax.validation.Valid;
+import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import com.aerospike.client.AerospikeClient;
@@ -25,22 +27,66 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.security.core.GrantedAuthority;
 
 import net.gradle.com.springbootexpample.model.Employee;
 import net.gradle.com.springbootexpample.repository.EmployeeRepository;
+import net.gradle.com.springbootexpample.model.User;
+import net.gradle.com.springbootexpample.service.UserService;
+import net.gradle.com.springbootexpample.service.SecurityService;
 
 @RestController
 @RequestMapping("/api/v1")
 public class EmployeeController {
     @Autowired
     private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private SecurityService securityService;
+
     AerospikeClient asdClient = new AerospikeClient("172.28.128.3", 3000);
     WritePolicy policy = new WritePolicy();
 
     @GetMapping("/employees")
     public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
+        List<Employee> emptyEmployee = new ArrayList<>();
+        boolean isAdmin = deteremineAuthorities();
+
+        if (isAdmin) {
+            return employeeRepository.findAll();
+        } else {
+            return emptyEmployee;
+        }
+
     }
+
+    private boolean deteremineAuthorities() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        ServletRequestAttributes attr = (ServletRequestAttributes)
+                RequestContextHolder.currentRequestAttributes();
+        HttpSession session = attr.getRequest().getSession(true);
+        boolean isUser = false;
+        boolean isAdmin = false;
+        final Collection<? extends GrantedAuthority> authorities = auth.getAuthorities();
+        for (final GrantedAuthority grantedAuthority : authorities) {
+            if (grantedAuthority.getAuthority().equals("INTERN")) {
+                isUser = true;
+                break;
+            } else if (grantedAuthority.getAuthority().equals("ADMIN")) {
+                isAdmin = true;
+                break;
+            }
+        }
+        return isAdmin;
+    }
+
 
     @PostMapping("/employee")
     public Employee createEmployee(@Valid @RequestBody Employee employee) {
