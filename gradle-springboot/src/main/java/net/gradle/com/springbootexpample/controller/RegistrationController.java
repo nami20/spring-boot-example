@@ -43,6 +43,7 @@ public class RegistrationController {
 
     @PostMapping("/signup")
     public ModelAndView createNewUser(@Valid final User UserDetails, BindingResult bindingResult) {
+        System.out.println(UserDetails);
         userValidator.validate(UserDetails, bindingResult);
         ModelAndView modelAndView = new ModelAndView();
 

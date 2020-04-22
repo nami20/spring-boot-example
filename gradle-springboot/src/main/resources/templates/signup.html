@@ -50,6 +50,14 @@
             </section>
             <section><p th:if="${#fields.hasErrors('passwordConfirm')}" th:errors="*{passwordConfirm}"></p>
             </section>
+            <section>
+                <span class="input-group-addon">Select Role*</span>
+                <div>
+                    <input type="radio" th:field="*{role}" name = "radio" value="INTERN" class="custom-control-input"> Intern
+                    <input type="radio" th:field="*{role}" name = "radio" value="DEVELOPER" class="custom-control-input"> Developer
+                    <input type="radio" th:field="*{role}" name = "radio" value="CUSTOMER" class="custom-control-input"> Customer
+                </div>
+            </section>
         </fieldset>
         <footer>
             <button id="btn-signup" type="submit" class="button">Sign Up</button>
